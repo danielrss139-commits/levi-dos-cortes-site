@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR" data-intro="cliente">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com/firebasejs/; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://content-firebaseappcheck.googleapis.com; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0b">
+<!--loja:head--><title>Agendar · Levi Dos Cortes</title>
+<meta name="description" content="Agende seu horário na Barbearia Levi Dos Cortes, Itapuã.">
+<meta name="apple-mobile-web-app-title" content="Levi Dos Cortes"><!--/loja:head-->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preload" href="fonts/hanken-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script src="loja.config.js"></script>
+<script src="boot.js"></script>
+<script src="firebase-config.js" defer></script>
+<script src="comum.js" defer></script>
+<script src="db-firebase.js" defer></script>
+<script src="db-demo.js" defer></script>
+<script src="agendar.js" defer></script>
+<script src="avaliacoes.js" defer></script>
+</head>
+<body class="pg-cliente">
+<div id="intro" class="abertura" aria-hidden="true" data-sub="Agendamento online"></div>
+<div class="fundo" aria-hidden="true"><span class="fundo-luz"></span><span class="fundo-luz2"></span></div>
+
+<main id="fluxo" class="wrap">
+  <header class="hero">
+    <div class="capa rise" style="--i:0">
+      <img class="capa-img" src="img/capa.webp" alt="" width="736" height="1020" fetchpriority="high">
+      <img class="capa-logo" src="img/logo-levi.png" alt="Barbearia Levi Dos Cortes">
+      <p class="capa-frase">Cada corte<br>conta uma história.</p>
+    </div>
+    <h1 class="hero-nome rise" style="--i:1" data-loja="nome"></h1>
+    <p class="hero-lede rise" style="--i:2" data-loja="slogan"></p>
+    <ul class="trust rise" style="--i:3" id="trust" aria-label="Sobre a barbearia"></ul>
+  </header>
+
+  <section class="works rise hidden" style="--i:4" id="works" aria-label="Trabalhos da casa">
+    <span class="eyebrow">Trabalhos da casa</span>
+    <div class="marquee" id="marquee"><div class="marquee-track" id="mtrack"></div></div>
+  </section>
+
+  <section class="step gl rise" style="--i:4" id="s1" aria-labelledby="t1">
+    <div class="step-head"><span class="step-dot" aria-hidden="true"></span><h2 class="step-title" id="t1">Serviço</h2></div>
+    <ul class="list" id="servicos" role="radiogroup" aria-labelledby="t1"></ul>
+  </section>
+
+  <section class="step gl is-locked rise" style="--i:5" id="s2" aria-labelledby="t2">
+    <div class="step-head"><span class="step-dot" aria-hidden="true"></span><h2 class="step-title" id="t2">Dia</h2><span class="step-note" id="mes"></span></div>
+    <div class="chips" id="dias" role="radiogroup" aria-labelledby="t2"></div>
+    <button type="button" class="btn opt cal-abrir hidden" id="calAbrir" aria-haspopup="dialog" aria-controls="cal">
+      <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 5.2h12v10H3zM3 8h12M6.2 2.8v3M11.8 2.8v3"/></svg>
+      <span id="calAbrirT">Ver calendário</span></button>
+  </section>
+
+  <section class="step gl is-locked rise" style="--i:6" id="s3" aria-labelledby="t3">
+    <div class="step-head"><span class="step-dot" aria-hidden="true"></span><h2 class="step-title" id="t3">Horário</h2><span class="step-note" id="nlivres"></span></div>
+    <p class="msg hidden" id="msg-horario" role="alert"></p>
+    <div id="horarios"><p class="muted small">Escolha o serviço e o dia para ver os horários livres.</p></div>
+  </section>
+
+  <section class="step gl is-locked rise" style="--i:7" id="s4" aria-labelledby="t4">
+    <div class="step-head"><span class="step-dot" aria-hidden="true"></span><h2 class="step-title" id="t4">Seus dados</h2></div>
+    <label class="field" id="f-nome">
+      <span class="field-label">Nome</span>
+      <input class="input" id="nome" type="text" autocomplete="name" autocapitalize="words" placeholder="Como prefere ser chamado" maxlength="60" minlength="2">
+      <span class="field-hint hidden">Digite seu nome (2 a 60 letras).</span>
+    </label>
+    <label class="field" id="f-zap">
+      <span class="field-label">WhatsApp</span>
+      <input class="input num" id="zap" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="(00) 9 0000-0000" maxlength="20">
+      <span class="field-hint">Só para a barbearia confirmar com você.</span>
+    </label>
+  </section>
+
+  <section class="step gl av-sec" id="avaliacoes" aria-labelledby="tav">
+    <div class="step-head"><h2 class="step-title" id="tav">Avaliações</h2><span class="step-note" id="av-media"></span></div>
+    <ul class="av-lista" id="av-lista"></ul>
+    <form class="av-form" id="av-form" novalidate>
+      <span class="field-label">Deixe sua avaliação</span>
+      <div class="av-estrelas" id="av-estrelas" role="radiogroup" aria-label="Nota de 1 a 5"></div>
+      <input class="input" id="av-nome" type="text" placeholder="Seu nome" maxlength="40" autocomplete="name">
+      <textarea class="input av-txt" id="av-txt" placeholder="Como foi o seu atendimento?" maxlength="280" rows="3"></textarea>
+      <p class="msg hidden" id="av-msg" role="status"></p>
+      <button class="btn opt" type="submit">Enviar avaliação</button>
+    </form>
+  </section>
+
+  <footer class="foot gl" id="rodape"></footer>
+  <section class="final" id="final" aria-hidden="true">
+    <img class="final-img" src="img/final.webp" alt="" width="736" height="920" loading="lazy">
+    <p class="final-txt">Seu corte<br>diz quem<br>você é.<small>Agende o seu em um minuto.</small></p>
+  </section>
+  <div class="bar-spacer bar-spacer-final"></div>
+</main>
+
+<main id="sucesso" class="wrap hidden" aria-live="polite"></main>
+
+<!-- barra inferior flutuante -->
+<div class="bar glass" id="bar">
+  <div class="bar-in">
+    <div class="bar-sum">
+      <div class="bar-sum-1" id="sum1">—</div>
+      <div class="bar-sum-2" id="sum2"></div>
+    </div>
+    <button class="btn btn-primary" id="continuar" type="button">Continuar</button>
+  </div>
+</div>
+
+<!-- sheet de confirmação -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet glass" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t">
+  <div class="sheet-grab"></div>
+  <p class="eyebrow">Confirme seu horário</p>
+  <h2 id="sheet-t" style="margin-top:6px">Tudo certo?</h2>
+  <div class="kv" id="sheet-kv"></div>
+  <p class="msg hidden" id="sheet-msg" role="alert"></p>
+  <div class="sheet-actions">
+    <button class="btn btn-primary btn-block" id="confirmar" type="button">Confirmar agendamento</button>
+    <button class="btn btn-text btn-block" id="voltar" type="button">Voltar e ajustar</button>
+  </div>
+</div>
+
+<!-- calendário do mês (abre de baixo) -->
+<div class="scrim" id="calScrim"></div>
+<div class="sheet glass cal" id="cal" role="dialog" aria-modal="true" aria-labelledby="calT" aria-hidden="true">
+  <div class="sheet-grab"></div>
+  <div class="cal-head">
+    <button type="button" class="ibtn opt" id="calAnt" aria-label="Mês anterior"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M11 3.5L5.5 9l5.5 5.5"/></svg></button>
+    <h2 class="cal-t" id="calT" aria-live="polite"></h2>
+    <button type="button" class="ibtn opt" id="calProx" aria-label="Próximo mês"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M7 3.5L12.5 9 7 14.5"/></svg></button>
+  </div>
+  <div class="cal-sem" aria-hidden="true"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+  <div class="cal-grade" id="calGrade" role="group" aria-labelledby="calT"></div>
+  <p class="cal-leg small muted"><span class="cal-leg-hoje" aria-hidden="true"></span>hoje · dias apagados estão fechados</p>
+  <button class="btn btn-text btn-block" id="calFechar" type="button">Fechar</button>
+</div>
+
+<div class="toast glass" id="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>
