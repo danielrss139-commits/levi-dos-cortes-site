@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-intro="painel">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-J/rVQ1aiFcBX1Ea6InXF4bLCDM8Yq+ZVG4bdi32F3x8=' 'sha256-R7+YXIqZimBDXebeuZSEaZe/f+GtWCPDwApjONQNbzI=' 'sha256-CZPaCMcHMlVE1DQjYs5dHbj1AxdZDm6vwQ4cKjQ/qS4=' 'sha256-pu4sUzinZaZM7ve/83ts/xEQt0GBaH0Pl+8TwIvOExQ=' 'sha256-9yc+G5/YHm631RFuxwBINu2mCkOKSKmWllul9IpOEeY=' 'sha256-D2B828Ir/bfvCVUwc/1Py3dw3MnQQD3pRSX1IEpX354=' 'sha256-42tEa+cxrKeY8xmWh4LL8SgPxAqZ/IsblrU6zuXdAyc=' https://www.gstatic.com/firebasejs/; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://content-firebaseappcheck.googleapis.com; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com/firebasejs/ 'sha256-l8SWzstK1DsOsz8StL5eN2RSizZg8RLyMOEZVV8UpAQ=' 'sha256-R7+YXIqZimBDXebeuZSEaZe/f+GtWCPDwApjONQNbzI=' 'sha256-SPHXy9nnnnu3ffSTbd5B1P/iLjNUdZF7gi38EK3KIdo=' 'sha256-pu4sUzinZaZM7ve/83ts/xEQt0GBaH0Pl+8TwIvOExQ=' 'sha256-9yc+G5/YHm631RFuxwBINu2mCkOKSKmWllul9IpOEeY=' 'sha256-D2B828Ir/bfvCVUwc/1Py3dw3MnQQD3pRSX1IEpX354=' 'sha256-Og8PWlTOGJo2pRJNcrncnm3ppGT0Bei7ZNrKvhNNEFs='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://content-firebaseappcheck.googleapis.com; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
@@ -1025,7 +1025,7 @@ window.LOJA = {
   intervaloMinutos: 15,               // TROCAR
   diasAntecedencia: 60,               // TROCAR
   galeria: [],
-  demo: true
+  demo: false
 };
 </script>
 <script>/* Decisões antes de pintar (único script síncrono no <head>; o resto é defer). Carregar DEPOIS de loja.config.js.
@@ -1269,12 +1269,13 @@ window.LOJA = {
    No modo demonstração (loja.config.js > demo: true) este arquivo é ignorado.
    ===================================================================== */
 window.FIREBASE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: ''
+  apiKey: 'AIzaSyBV6-nI1g9OpKEuGYfIvqmX3aN2wRHwHdk',
+  authDomain: 'levibarber-1e318.firebaseapp.com',
+  projectId: 'levibarber-1e318',
+  storageBucket: 'levibarber-1e318.firebasestorage.app',
+  messagingSenderId: '493221327114',
+  appId: '1:493221327114:web:b9505d6974a7b577d60af3',
+  measurementId: 'G-5XM9E0W862'
 };
 
 /* App Check (proteção contra robôs/spam de agendamento) — DESLIGADO.
@@ -2614,7 +2615,7 @@ window.FIREBASE_EMULADOR = null;
           '<div class="ag-top"><div class="ag-time"><span class="num">' + esc(U.hhmm(a.inicio)) + '</span>' + (feito ? OK_SVG : '<span class="small">até ' + esc(U.hhmm(a.fim)) + '</span>') + '</div>' +
           '<div class="ag-main">' + (a.id === proxId ? '<div class="ag-prox"><span class="pulse" aria-hidden="true"></span>Próximo</div>' : '') +
           '<div class="ag-name">' + esc(a.nome) + (st.novos[a.id] ? '<span class="ag-new">novo</span>' : '') + '</div>' +
-          '<div class="ag-svc">' + esc(a.servicoNome) + (a.origem === 'online' ? ' · pelo link' : '') + '</div></div>' +
+          '<div class="ag-svc">' + esc(a.servicoNome) + (a.origem === 'online' ? ' · pelo link' : '') + (Number(a.duracao) ? ' · ' + esc(String(a.duracao)) + ' min' : '') + '</div></div>' +
           '<div class="ag-price">' + esc(U.brlCurto(a.preco)) + '</div></div>' +
           '<div class="ag-acts">' + acts + '</div></li>';
       }).join('') + (nowAt === ags.length ? nowLi : '');

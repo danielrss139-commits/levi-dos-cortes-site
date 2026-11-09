@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-intro="cliente">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0fLXVD+94fPmbP07xsRUZOkwWdeQpKrAqgs3rHYMAfU=' 'sha256-R7+YXIqZimBDXebeuZSEaZe/f+GtWCPDwApjONQNbzI=' 'sha256-CZPaCMcHMlVE1DQjYs5dHbj1AxdZDm6vwQ4cKjQ/qS4=' 'sha256-pu4sUzinZaZM7ve/83ts/xEQt0GBaH0Pl+8TwIvOExQ=' 'sha256-9yc+G5/YHm631RFuxwBINu2mCkOKSKmWllul9IpOEeY=' 'sha256-D2B828Ir/bfvCVUwc/1Py3dw3MnQQD3pRSX1IEpX354=' 'sha256-AluVujPbNRyah9Qi6ZrV6ph2ec2W6Qc3SsiOGmkkiuM=' 'sha256-AGKWB4GvEXZttXa8pniv0UlheGAJyviHy46zGABvnco=' https://www.gstatic.com/firebasejs/; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://content-firebaseappcheck.googleapis.com; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com/firebasejs/ 'sha256-jdevaYOmWfRZeHkG2L1c3mGTS2UY2nMW6uybDM0M6Hk=' 'sha256-R7+YXIqZimBDXebeuZSEaZe/f+GtWCPDwApjONQNbzI=' 'sha256-SPHXy9nnnnu3ffSTbd5B1P/iLjNUdZF7gi38EK3KIdo=' 'sha256-pu4sUzinZaZM7ve/83ts/xEQt0GBaH0Pl+8TwIvOExQ=' 'sha256-9yc+G5/YHm631RFuxwBINu2mCkOKSKmWllul9IpOEeY=' 'sha256-2GCgWvvzac9QijZsVdoHf1clLgDTneCfwdQl+SXdEQ0=' 'sha256-d2HGZvC8ba9T+2yelH4tzdt8HSSvRNxa7ha629wkBBc=' 'sha256-AGKWB4GvEXZttXa8pniv0UlheGAJyviHy46zGABvnco='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://content-firebaseappcheck.googleapis.com; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
@@ -1080,7 +1080,7 @@ window.LOJA = {
   intervaloMinutos: 15,               // TROCAR
   diasAntecedencia: 60,               // TROCAR
   galeria: [],
-  demo: true
+  demo: false
 };
 </script>
 <script>/* Decisões antes de pintar (único script síncrono no <head>; o resto é defer). Carregar DEPOIS de loja.config.js.
@@ -1160,7 +1160,7 @@ window.LOJA = {
 
   <section class="step gl rise" style="--i:4" id="s1" aria-labelledby="t1">
     <div class="step-head"><span class="step-dot" aria-hidden="true"><i>1</i></span><h2 class="step-title" id="t1">Serviço</h2></div>
-    <ul class="list" id="servicos" role="radiogroup" aria-labelledby="t1"></ul>
+    <ul class="list" id="servicos" role="group" aria-labelledby="t1"></ul>
   </section>
 
   <section class="step gl is-locked rise" style="--i:5" id="s2" aria-labelledby="t2">
@@ -1269,12 +1269,13 @@ window.LOJA = {
    No modo demonstração (loja.config.js > demo: true) este arquivo é ignorado.
    ===================================================================== */
 window.FIREBASE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: ''
+  apiKey: 'AIzaSyBV6-nI1g9OpKEuGYfIvqmX3aN2wRHwHdk',
+  authDomain: 'levibarber-1e318.firebaseapp.com',
+  projectId: 'levibarber-1e318',
+  storageBucket: 'levibarber-1e318.firebasestorage.app',
+  messagingSenderId: '493221327114',
+  appId: '1:493221327114:web:b9505d6974a7b577d60af3',
+  measurementId: 'G-5XM9E0W862'
 };
 
 /* App Check (proteção contra robôs/spam de agendamento) — DESLIGADO.
@@ -2260,7 +2261,7 @@ window.FIREBASE_EMULADOR = null;
       var ini = Number(x.inicio), dur = Number(x.duracao), fim = ini + dur, cfg = ler('config', cfgPadrao());
       var s = ler('servicos', []).filter(function (y) { return y.id === x.servicoId; })[0];
       var f = cfg.horarios[U.parseISO(x.data).getDay()];
-      if (!s || s.preco !== x.preco || s.duracao !== dur || !f || ini < f[0] || fim > f[1] || (cfg.folgas || []).indexOf(x.data) >= 0 ||
+      if (!s || Number(x.preco) < s.preco || dur < s.duracao || !f || ini < f[0] || fim > f[1] || (cfg.folgas || []).indexOf(x.data) >= 0 ||
         (cfg.almoco && ini < cfg.almoco[1] && cfg.almoco[0] < fim)) return Promise.reject(erro('invalido', 'inválido'));
       if (!livre(x.data, ini, fim)) return new Promise(function (r, j) { setTimeout(function () { j(erro('ocupado', 'ocupado')); }, 60); });
       var a = { id: U.uid(), nome: String(x.nome).trim().replace(/\s+/g, ' '), telefone: U.soDigitos(x.telefone || x.whatsapp),
@@ -2317,7 +2318,11 @@ window.FIREBASE_EMULADOR = null;
   var lite = html.classList.contains('lite');   // aparelho fraco (boot.js): sem entradas animadas
   var calmo = reduz || lite;
 
-  var st = { servicos: [], cfg: null, servico: null, data: null, inicio: null, livres: [], enviando: false };
+  var st = { servicos: [], selecionados: [], cfg: null, servico: null, data: null, inicio: null, livres: [], enviando: false };
+  function atualizarSelecao() {
+    var a = st.selecionados || [];
+    st.servico = a.length ? { id: a[0].id, nome: a.map(function(s){return s.nome;}).join(' + '), preco: a.reduce(function(t,s){return t + Number(s.preco||0);},0), duracao: a.reduce(function(t,s){return t + Number(s.duracao||0);},0) } : null;
+  }
 
   /* ================= marca, cabeçalho e abertura ================= */
   JC.aplicarHead('Agendar');
@@ -2424,10 +2429,10 @@ window.FIREBASE_EMULADOR = null;
       '</div>';
   }
   function renderServicos(anim) {
-    $('servicos').innerHTML = st.servicos.map(function (s, i) {
-      var on = st.servico && st.servico.id === s.id, x = extra(s);
+    $('servicos').innerHTML = '<li class="muted small" style="padding:4px 0 12px">Selecione um ou mais serviços. O valor e o tempo serão somados automaticamente.</li>' + st.servicos.map(function (s, i) {
+      var on = st.selecionados.some(function(v){ return v.id === s.id; }), x = extra(s);
       var th = '<span class="thumb" aria-hidden="true">' + (x.foto ? '<img src="' + esc(x.foto) + '" alt="" width="52" height="52" decoding="async"' + (i ? ' loading="lazy"' : '') + '>' : JC.icone(s)) + '</span>';
-      return '<li class="reveal' + (revelados ? ' is-in' : '') + '" style="--i:' + i + '"><button type="button" class="row svc opt' + (on ? ' is-on' : '') + '" role="radio" aria-checked="' + !!on + '" data-id="' + esc(s.id) + '">' +
+      return '<li class="reveal' + (revelados ? ' is-in' : '') + '" style="--i:' + i + '"><button type="button" class="row svc opt' + (on ? ' is-on' : '') + '" role="checkbox" aria-checked="' + !!on + '" data-id="' + esc(s.id) + '">' +
         th +
         '<span class="row-main"><span class="row-title">' + esc(s.nome) + '</span><span class="row-sub" style="display:block">' + esc(dur(s.duracao)) + '</span></span>' +
         '<span class="row-end">' + esc(U.brlCurto(s.preco)) + '<span class="row-mark" aria-hidden="true"></span></span></button>' +
@@ -2449,23 +2454,18 @@ window.FIREBASE_EMULADOR = null;
     var ir = e.target.closest('[data-ir]');
     if (ir) { rolarPara(ir.dataset.ir); return; }
     var b = e.target.closest('.row'); if (!b || st.feito) return;
-    var mesmo = st.servico && st.servico.id === b.dataset.id;
     var novo = st.servicos.filter(function (s) { return s.id === b.dataset.id; })[0];
     if (!novo) return;
-    st.servico = novo;
+    var pos = st.selecionados.findIndex(function (s) { return s.id === novo.id; });
+    if (pos >= 0) st.selecionados.splice(pos, 1); else st.selecionados.push(novo);
+    atualizarSelecao();
     revelados = true;
-    if (!mesmo) {
-      msgHorario('');
-      renderServicos(true);
-      var nb = $('servicos').querySelector('.row.is-on');
-      if (nb) setTimeout(function () {
-        var r = nb.getBoundingClientRect();
-        if (r.top < 0 || r.top > window.innerHeight * .45) window.scrollTo({ top: r.top + window.scrollY - 16, behavior: reduz ? 'auto' : 'smooth' });
-      }, 60);
-    }
-    $('s2').classList.remove('is-locked');
+    st.inicio = null;
+    msgHorario('');
+    renderServicos(true);
+    $('s2').classList.toggle('is-locked', !st.servico);
     renderDias();
-    if (st.data) carregarHorarios();
+    if (st.data && st.servico) carregarHorarios(); else { st.livres = []; $('horarios').innerHTML = ''; }
     atualizarBarra();
   });
 
@@ -2835,7 +2835,7 @@ window.FIREBASE_EMULADOR = null;
   }
 
   function reiniciar() {
-    st.feito = false; st.servico = null; st.data = null; st.inicio = null; st.livres = [];
+    st.feito = false; st.servico = null; st.selecionados = []; st.data = null; st.inicio = null; st.livres = [];
     $('nome').value = ''; $('zap').value = '';
     msgHorario('');
     ['s2', 's3', 's4'].forEach(function (id) { $(id).classList.add('is-locked'); });
@@ -2872,7 +2872,7 @@ window.FIREBASE_EMULADOR = null;
     st.cfg = cfg; if (cfg && cfg.tema) JC.aplicarTema(cfg.tema); if (cfg && cfg.existe !== false) { renderTrust(cfg); renderRodape(cfg); }
     if (JSON.stringify(lista) !== JSON.stringify(st.servicos)) {   // catálogo mudou no painel
       st.servicos = lista;
-      if (st.servico) st.servico = lista.filter(function (s) { return s.id === st.servico.id; })[0] || null;
+      if (st.selecionados.length) { st.selecionados = st.selecionados.map(function(v){return lista.filter(function(s){return s.id===v.id;})[0];}).filter(Boolean); atualizarSelecao(); }
       if (pronto()) { renderServicos(); atualizarBarra(); }
     }
     if (!pronto()) { emBreve(); return; }
