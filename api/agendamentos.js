@@ -1,38 +1,69 @@
+
 const admin = require("firebase-admin");
 
-function firebase() {
+function obterBanco() {
   if (admin.apps.length) return admin.firestore();
 
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) throw new Error("Configuração do Firebase ausente.");
-
-  const credentials = JSON.parse(raw);
+  const chave = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!chave) throw new Error("Configuração do Firebase ausente.");
 
   admin.initializeApp({
-    credential: admin.credential.cert(credentials)
+    credential: admin.credential.cert(JSON.parse(chave))
   });
 
   return admin.firestore();
 }
 
-function resposta(res, status, dados) {
+function responder(res, status, dados) {
   return res.status(status).json(dados);
 }
 
-function erro(status, codigo, mensagem) {
-  const e = new Error(mensagem);
-  e.status = status;
-  e.code = codigo;
-  return e;
+function falhar(status, codigo, mensagem) {
+  const erro = new Error(mensagem);
+  erro.status = status;
+  erro.code = codigo;
+  throw erro;
 }
 
-function dataLocal() {
+function dataBahia() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Bahia",
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
   }).format(new Date());
+}
+
+function minutoBahia() {
+  const partes = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Bahia",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).format(new Date()).split(":").map(Number);
+
+  return partes[0] * 60 + partes[1];
+}
+
+function validarData(data) {
+  if (typeof data !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+    falhar(400, "invalido", "Data inválida.");
+  }
+
+  const [ano, mes, dia] = data.split("-").map(Number);
+  const teste = new Date(Date.UTC(ano, mes - 1, dia));
+
+  if (
+    teste.getUTCFullYear() !== ano ||
+    teste.getUTCMonth() !== mes - 1 ||
+    teste.getUTCDate() !== dia
+  ) {
+    falhar(400, "invalido", "Data inválida.");
+  }
+
+  if (data < dataBahia()) {
+    falhar(400, "invalido", "Não é possível agendar no passado.");
+  }
 }
 
 function blocos(inicio, fim) {
@@ -49,42 +80,21 @@ function blocos(inicio, fim) {
   return resultado;
 }
 
-function validarData(data) {
-  if (typeof data !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    throw erro(400, "invalido", "Data inválida.");
-  }
-
-  const [ano, mes, dia] = data.split("-").map(Number);
-  const teste = new Date(Date.UTC(ano, mes - 1, dia));
-
-  if (
-    teste.getUTCFullYear() !== ano ||
-    teste.getUTCMonth() !== mes - 1 ||
-    teste.getUTCDate() !== dia
-  ) {
-    throw erro(400, "invalido", "Data inválida.");
-  }
-
-  if (data < dataLocal()) {
-    throw erro(400, "invalido", "Não é possível agendar no passado.");
-  }
-}
-
-module.exports = async (req, res) => {
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-
+module.exports = async function (req, res) {
   if (req.method !== "POST") {
-    return resposta(res, 405, {
+    res.setHeader("Allow", "POST");
+    return responder(res, 405, {
+      codigo: "metodo",
       erro: "Método não permitido."
     });
   }
 
   try {
-    const db = firebase();
+    const db = obterBanco();
     const dados = req.body;
 
     if (!dados || typeof dados !== "object" || Array.isArray(dados)) {
-      throw erro(400, "invalido", "Dados inválidos.");
+      falhar(400, "invalido", "Dados inválidos.");
     }
 
     const nome = String(dados.nome || "")
@@ -95,11 +105,11 @@ module.exports = async (req, res) => {
       .replace(/\D/g, "");
 
     if (nome.length < 2 || nome.length > 60) {
-      throw erro(400, "invalido", "Nome inválido.");
+      falhar(400, "invalido", "Nome inválido.");
     }
 
     if (telefone.length < 10 || telefone.length > 13) {
-      throw erro(400, "invalido", "Telefone inválido.");
+      falhar(400, "invalido", "Telefone inválido.");
     }
 
     validarData(dados.data);
@@ -109,14 +119,14 @@ module.exports = async (req, res) => {
     if (
       !Number.isInteger(inicio) ||
       inicio < 0 ||
-      inicio >= 1440
+      inicio >= 1440 ||
+      inicio % 15 !== 0
     ) {
-      throw erro(400, "invalido", "Horário inválido.");
+      falhar(400, "invalido", "Horário inválido.");
     }
 
     let ids = dados.servicoIds;
 
-    // Compatibilidade temporária com a versão atual do site.
     if (!Array.isArray(ids)) {
       ids = [dados.servicoId];
     }
@@ -127,32 +137,34 @@ module.exports = async (req, res) => {
       ids.some(id => typeof id !== "string" || !id.trim()) ||
       new Set(ids).size !== ids.length
     ) {
-      throw erro(400, "invalido", "Seleção de serviços inválida.");
+      falhar(400, "invalido", "Seleção de serviços inválida.");
     }
+
+    const configRef = db.collection("config").doc("loja");
 
     const servicoRefs = ids.map(id =>
       db.collection("servicos").doc(id)
     );
 
-    const configRef = db.collection("config").doc("loja");
+    const agendamento = await db.runTransaction(async tx => {
+      // Todas as leituras são feitas antes das gravações.
+      const configSnap = await tx.get(configRef);
 
-    const resultado = await db.runTransaction(async tx => {
-      // Primeiro fazemos todas as leituras.
+      if (!configSnap.exists) {
+        falhar(503, "config", "Agenda ainda não configurada.");
+      }
+
       const servicoSnaps = [];
 
       for (const ref of servicoRefs) {
         servicoSnaps.push(await tx.get(ref));
       }
 
-      const configSnap = await tx.get(configRef);
-
-      if (!configSnap.exists) {
-        throw erro(503, "config", "Agenda ainda não configurada.");
-      }
+      const config = configSnap.data();
 
       const servicos = servicoSnaps.map(snap => {
         if (!snap.exists) {
-          throw erro(400, "invalido", "Um serviço não existe mais.");
+          falhar(400, "invalido", "Um serviço não existe mais.");
         }
 
         const s = snap.data();
@@ -164,7 +176,7 @@ module.exports = async (req, res) => {
           !Number.isInteger(s.duracao) ||
           s.duracao <= 0
         ) {
-          throw erro(400, "invalido", "Serviço indisponível.");
+          falhar(400, "invalido", "Serviço indisponível.");
         }
 
         return {
@@ -175,24 +187,26 @@ module.exports = async (req, res) => {
         };
       });
 
-      const config = configSnap.data();
       const horarios = config.horarios || {};
       const diaSemana = new Date(
-        dados.data + "T12:00:00"
-      ).getDay();
+        dados.data + "T12:00:00Z"
+      ).getUTCDay();
 
       const expediente = horarios[String(diaSemana)];
 
       if (
         !Array.isArray(expediente) ||
         expediente.length !== 2 ||
-        !expediente.every(Number.isInteger)
+        !expediente.every(Number.isInteger) ||
+        expediente[0] < 0 ||
+        expediente[1] > 1440 ||
+        expediente[0] >= expediente[1]
       ) {
-        throw erro(400, "fechado", "A barbearia não abre nesse dia.");
+        falhar(400, "fechado", "A barbearia não abre nesse dia.");
       }
 
       if ((config.folgas || []).includes(dados.data)) {
-        throw erro(400, "fechado", "A barbearia estará fechada nessa data.");
+        falhar(400, "fechado", "A barbearia estará fechada nessa data.");
       }
 
       const duracao = servicos.reduce(
@@ -212,49 +226,34 @@ module.exports = async (req, res) => {
         inicio < expediente[0] ||
         fim > expediente[1]
       ) {
-        throw erro(400, "invalido", "Horário fora do expediente.");
+        falhar(400, "invalido", "Horário fora do expediente.");
       }
 
-      const intervalo = Number(config.intervalo) || 30;
+      const intervalo = Number(config.intervalo) || 15;
 
       if (
         intervalo < 1 ||
         (inicio - expediente[0]) % intervalo !== 0
       ) {
-        throw erro(400, "invalido", "Horário inválido para a agenda.");
+        falhar(400, "invalido", "Horário inválido para a agenda.");
       }
 
       const almoco = config.almoco;
 
       if (
         Array.isArray(almoco) &&
+        almoco.length === 2 &&
         inicio < almoco[1] &&
         fim > almoco[0]
       ) {
-        throw erro(400, "invalido", "Horário indisponível durante o almoço.");
+        falhar(400, "fechado", "Horário indisponível durante o almoço.");
       }
 
-      const agora = new Date();
-      const hoje = dataLocal();
-
-      if (dados.data === hoje) {
-        const horaAtual = Number(
-          new Intl.DateTimeFormat("en-GB", {
-            timeZone: "America/Bahia",
-            hour: "2-digit",
-            minute: "2-digit",
-            hourCycle: "h23"
-          }).format(agora).replace(":", "")
-        );
-
-        const minutoAtual =
-          Math.floor(horaAtual / 100) * 60 + horaAtual % 100;
-
-        if (inicio <= minutoAtual) {
-          throw erro(400, "invalido", "Escolha um horário futuro.");
-        }
+      if (dados.data === dataBahia() && inicio <= minutoBahia()) {
+        falhar(400, "invalido", "Escolha um horário futuro.");
       }
 
+      // Verifica todos os blocos de 15 minutos.
       const minutos = blocos(inicio, fim);
 
       const slotRefs = minutos.map(minuto =>
@@ -268,18 +267,19 @@ module.exports = async (req, res) => {
       }
 
       if (slotSnaps.some(snap => snap.exists)) {
-        throw erro(409, "ocupado", "Esse horário acabou de ser ocupado.");
+        falhar(409, "ocupado", "Esse horário acabou de ser ocupado.");
       }
 
-      // Confere os dados enviados pelo site na versão atual.
+      // Confere os valores apresentados pelo site.
       if (
-        ids.length === 1 &&
-        (
-          Number(dados.preco) !== preco ||
-          Number(dados.duracao) !== duracao
-        )
+        Number(dados.preco) !== preco ||
+        Number(dados.duracao) !== duracao
       ) {
-        throw erro(400, "invalido", "Os dados do serviço foram alterados. Atualize a página.");
+        falhar(
+          400,
+          "invalido",
+          "Os serviços foram alterados. Atualize a página."
+        );
       }
 
       const agRef = db.collection("agendamentos").doc();
@@ -296,6 +296,7 @@ module.exports = async (req, res) => {
         inicio,
         fim,
         status: "marcado",
+        origem: "online",
         criadoEm: admin.firestore.FieldValue.serverTimestamp()
       };
 
@@ -317,15 +318,15 @@ module.exports = async (req, res) => {
       };
     });
 
-    return resposta(res, 201, {
+    return responder(res, 201, {
       sucesso: true,
-      agendamento: resultado
+      agendamento
     });
 
   } catch (e) {
     console.error("[API agendamentos]", e);
 
-    return resposta(res, e.status || 500, {
+    return responder(res, e.status || 500, {
       codigo: e.code || "erro",
       erro: e.status
         ? e.message
