@@ -2868,7 +2868,7 @@ window.FIREBASE_EMULADOR = null;
       '<a class="btn btn-ghost btn-block" style="margin-top:14px" href="https://wa.me/' + esc(ZAP) + '" target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a>' : 'Volte daqui a pouco.') + '</div></li>';
     $('s2').classList.add('is-locked'); $('dias').innerHTML = ''; $('mes').textContent = ''; $('calAbrir').classList.add('hidden');
   }
-  function pronto() { return st.servicos.length > 0 && st.cfg && st.cfg.existe !== false; }
+  function pronto() { return st.servicos.length > 0 && !!st.cfg; }
   function aplicarCatalogo(lista, cfg) {
     var antes = pronto();
     st.cfg = cfg; if (cfg && cfg.tema) JC.aplicarTema(cfg.tema); if (cfg && cfg.existe !== false) { renderTrust(cfg); renderRodape(cfg); }
@@ -2957,5 +2957,6 @@ window.FIREBASE_EMULADOR = null;
   });
 })();
 </script>
+<script src="/remove-sw.js" defer></script>
 </body>
 </html>
