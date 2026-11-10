@@ -1987,38 +1987,38 @@ window.FIREBASE_EMULADOR = null;
 
       // público (ou barbeiro): 1 batch = agendamento + todos os slots de 15 min
       criarAgendamento: function (dados) {
-        return ctx().then(function (c) {
-          var nome = String(dados.nome || '').trim().replace(/\s+/g, ' ');
-          var tel = soDigitos(dados.telefone || dados.whatsapp);
-          var inicio = Number(dados.inicio), duracao = Number(dados.duracao), fim = inicio + duracao;
-          var agRef = c.F.doc(c.F.collection(c.db, 'agendamentos'));
-          var reg = { nome: nome, telefone: tel, servicoId: dados.servicoId, servicoNome: dados.servicoNome,
-            preco: dados.preco, duracao: duracao, data: dados.data, inicio: inicio, fim: fim,
-            status: 'marcado', criadoEm: c.F.serverTimestamp() };
-          if (dados.origem === 'painel') reg.origem = 'painel';   // só o barbeiro consegue gravar isto
-          var mins = blocos(inicio, fim);
-          // checagem rápida: se algum bloco já está ocupado, nem tenta gravar (a garantia real é a regra)
-          return Promise.all(refsSlots(c, dados.data, mins).map(function (r) { return c.F.getDoc(r); })).then(function (ss) {
-            if (ss.some(function (s) { return s.exists(); })) throw erroOcupado();
-            return gravar();
+        return fetch('/api/agendamentos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nome: dados.nome,
+            telefone: dados.telefone || dados.whatsapp,
+            servicoId: dados.servicoId,
+            servicoIds: dados.servicoIds,
+            servicoNome: dados.servicoNome,
+            preco: dados.preco,
+            duracao: dados.duracao,
+            data: dados.data,
+            inicio: dados.inicio
+          })
+        }).then(function (res) {
+          return res.json().then(function (dadosResposta) {
+            if (!res.ok) {
+              var erro = new Error(
+                dadosResposta.erro || 'Não foi possível confirmar o agendamento.'
+              );
+              erro.code = dadosResposta.codigo || 'erro';
+              throw erro;
+            }
+
+            if (!dadosResposta.sucesso || !dadosResposta.agendamento) {
+              throw new Error('Resposta inválida do servidor.');
+            }
+
+            return dadosResposta.agendamento;
           });
-          function gravar() {
-          var b = c.F.writeBatch(c.db);
-          b.set(agRef, reg);
-          refsSlots(c, dados.data, mins).forEach(function (r, i) {
-            b.set(r, { agId: agRef.id, data: dados.data, minuto: mins[i], criadoEm: c.F.serverTimestamp() });
-          });
-          return b.commit().then(function () {
-            return Object.assign({}, reg, { id: agRef.id, whatsapp: tel, origem: reg.origem || 'online', criadoEm: Date.now() });
-          }, function (e) {
-            if (!e || e.code !== 'permission-denied') throw e;
-            // negado: foi porque algum bloco já existe (ocupado) ou por dado inválido?
-            return Promise.all(refsSlots(c, dados.data, mins).map(function (r) { return c.F.getDoc(r); })).then(function (ss) {
-              if (ss.some(function (s) { return s.exists(); })) throw erroOcupado();
-              throw erro('invalido', 'Não foi possível confirmar esse horário.', e);
-            }, function () { throw erro('invalido', 'Não foi possível confirmar esse horário.', e); });
-          });
-          }
         });
       },
 
@@ -2772,7 +2772,9 @@ window.FIREBASE_EMULADOR = null;
     var lento = setTimeout(function () { sheetMsg('A conexão está lenta. Aguarde, ainda estamos confirmando…', true); }, 12000);
     DB.criarAgendamento({
       nome: nomeLimpo(), telefone: telDigitos($('zap').value),
-      servicoId: p.servico.id, servicoNome: p.servico.nome, preco: p.servico.preco, duracao: p.servico.duracao,
+      servicoId: p.servico.id,
+      servicoIds: st.selecionados.map(function (s) { return s.id; }),
+      servicoNome: p.servico.nome, preco: p.servico.preco, duracao: p.servico.duracao,
       data: p.data, inicio: p.inicio
     }).then(function (ag) {
       clearTimeout(lento); st.enviando = false;
