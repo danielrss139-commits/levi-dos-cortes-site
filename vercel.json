@@ -4,5 +4,11 @@
     "api/agendamentos.js": {
       "maxDuration": 10
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/bloqueio-agendamento.html"
+    }
+  ]
 }
